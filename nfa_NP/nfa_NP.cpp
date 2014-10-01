@@ -44,7 +44,7 @@ void inference(frag_container* pool, state** s, int size) {
 		int set_size = 0;
 		subset(s, pool->frags[i].set, s[i], &size, &set_size);
 		pool->frags[i].handle = (*s)[i].To;
-		pool->frags[i].offset = set_size;
+		pool->frags[i].length = set_size;
 	}
 	_reduce_frag_spray(pool);
 }
@@ -52,14 +52,14 @@ void inference(frag_container* pool, state** s, int size) {
 /* Void Match( string task, int start_state, frag* fragment_pool ); */
 void Match(string s, int n, frag_container pool)
 {
-	RunTimeFragCluster history;
-	frag ctx = _Get_From_Pool( n, pool );
-	char * on = &s[0];
+	char * cursor = &s[0];
 	char * end = &s[s.length()];
+	frag ctx = _Get_From_Pool(n, pool);
+	RunTimeFragCluster history;
 
-	while ( on != end )
+	while (cursor != end)
 	{
-		cout << "x" << *on++ << endl;
+		
 		
 
 

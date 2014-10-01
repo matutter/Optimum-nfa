@@ -18,7 +18,7 @@ typedef struct state_container {
 /*  16 bytes */
 typedef struct  frag {
 	ushort handle;
-	ushort offset;
+	ushort length;
 	state ** set;
 } frag;
 
@@ -41,13 +41,16 @@ inline ostream &operator<<(std::ostream &out, const state &p) {
 
 inline ostream &operator<<(std::ostream &out, const frag &p) {
 	out << "From " << p.handle << endl;
-	for (size_t i = 0; i < p.offset; i++)
+	if (p.length == 0)
+		out << "EMPTY" << endl;
+	else
+	for (size_t i = 0; i < p.length; i++)
 		out << *p.set[i] << endl;
 	return out;
 }
 inline ostream &operator<<(std::ostream &out, const frag_container &p) {
 	for (size_t i = 0; i < p.length; i++) {
-		for (size_t x = 0; x < p.frags[i].offset; x++)
+		for (size_t x = 0; x < p.frags[i].length; x++)
 			out << *(p.frags[i].set[x]) << endl;
 		cout << endl;
 	}
@@ -81,15 +84,26 @@ void _set_add_at(state ** destination, state * elem, size_t length) {
 void _set_frag(frag * f, int key, int size, state ** frags)
 {
 	f->handle = key;
-	f->offset = size;
+	f->length = size;
 	f->set = frags;
 }
+
+bool _get_frag_match_on(frag * f, char c) {
+	for (int i = f->length - 1; i >= 0; i--, f->length--)
+		if (f->set[i]->On == c) break;
+	return f->length-1 >= 0 && f->length--;
+}
+
 
 void _set_frag_cont(frag_container* c, size_t length) {
 	c->frags = new frag[length];
 	c->length = length;
 	for (size_t i = 0; i < length; i++)
 		c->frags[i].set = new state*[length];
+}
+
+bool empty(frag f) {
+	return f.length == 0;
 }
 
 bool exists(int* b, size_t size, int a) {
@@ -117,7 +131,7 @@ frag _Get_From_Pool(ushort n, frag_container pool)
 			return pool.frags[i];
 	frag fail;
 	fail.handle = 0;
-	fail.offset = 0;
+	fail.length = 0;
 	return fail;
 }
 /****************************************************************************************************/
