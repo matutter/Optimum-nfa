@@ -54,8 +54,17 @@ void Match(string s, int n, frag_container pool)
 {
 	RunTimeFragCluster history;
 	frag ctx = _Get_From_Pool( n, pool );
+	char * on = &s[0];
+	char * end = &s[s.length()];
 
-	cout << ctx << endl;
+	while ( on != end )
+	{
+		cout << "x" << *on++ << endl;
+		
+
+
+
+	}
 	
 }
 
