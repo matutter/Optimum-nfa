@@ -1,4 +1,4 @@
-#include "stdafx.h"
+//#include "stdafx.h"
 /* notes
 * an 'on' code of 0x0 (null) will represent an epsilon transition or empty
 * all the search algorithms are NOT optimized, i wrote this on a plane
@@ -20,8 +20,8 @@ const ushort f[8] = { 2, 2, 2, 2, 4, 3, 3, 1 };
 const char   o[8] = { 'a', 0x0, 'b', 'a', 'a', 'b', 'b', 0x0 };
 const ushort t[8] = { 2, 4, 3, 1, 3, 3, 1, 2 };
 
-void subset(state ** s1, state ** s2, state * ctx, int * size1, int * size2) {
-	for (int i = 0; i < *size1; i++)
+void subset(state ** s1, state ** s2, state * ctx, size_t * size1, size_t * size2) {
+	for (size_t i = 0; i < *size1; i++)
 	{
 		if ((*s1)[i].From != ctx->To) continue;
 
@@ -33,15 +33,15 @@ void subset(state ** s1, state ** s2, state * ctx, int * size1, int * size2) {
 	}
 }
 
-void inference(frag_container* pool, state** s, int size) {
-	for (int i = 0; i < size; i++)
+void inference(frag_container* pool, state** s, size_t size) {
+	for (size_t i = 0; i < size; i++)
 	{
 		/* search criteria */
 		ushort from = (*s)[i].To;
 		char on = (*s)[i].On;
 
 		/* return data */
-		int set_size = 0;
+		size_t set_size = 0;
 		subset(s, pool->frags[i].set, s[i], &size, &set_size);
 		pool->frags[i].handle = (*s)[i].To;
 		pool->frags[i].length = set_size;
@@ -50,22 +50,37 @@ void inference(frag_container* pool, state** s, int size) {
 }
 
 /* Void Match( string task, int start_state, frag* fragment_pool ); */
-void Match(string s, int n, frag_container pool)
+bool Match( MatchParams p )
 {
-	char * cursor = &s[0];
-	char * end = &s[s.length()];
-	frag ctx = _Get_From_Pool(n, pool);
+	char * cursor = &p.s[0];
+	char * end = &p.s[p.s.length()];
+	context ctx = _CTX_From_Pool(p.start, p.pool);
 	RunTimeFragCluster history;
+	_RTFC_set( &history, p.size );
 
 	while (cursor != end)
 	{
-		
-		
+		cout << ctx << endl;
+/*		_get_frag_match_on( &ctx, *cursor );
+		if(empty(ctx))
+		{
 
+			if( empty( &history ) )
+				return false;
+			else
+				_RTFC_shift( &history, &ctx );
+		}
+		else
+		{
+			if( ctx.length > 1 )
+				_RTFC_append( &history, &ctx );
 
+			ctx = _Get_From_Pool( ctx.set[ctx.length-1]->To, p.pool );
 
-	}
-	
+			++cursor;
+		}
+	}*/
+	return false;
 }
 
 int main(int argc, char const *argv[])
@@ -88,9 +103,17 @@ int main(int argc, char const *argv[])
 	/* create set of all transition results */
 	inference(&pool, core_ptr, length);
 	/* match string */
-	Match( "aa", 2, pool );
+	MatchParams params;
+	params.size = length;
+	params.start = 2;
+	params.accept = new int[1];
+	params.accept[1] = 4;
+	params.s = "aa";
+	params.pool = pool;
 
-	getchar();
+	Match( params );
+
+	//getchar();
 
 	return 0;
 }

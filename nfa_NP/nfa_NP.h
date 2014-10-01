@@ -3,6 +3,7 @@
 #endif
 
 using namespace std;
+
 /* 6 bytes */
 typedef struct state {
 	ushort From;
@@ -22,6 +23,11 @@ typedef struct  frag {
 	state ** set;
 } frag;
 
+typedef struct context {
+	frag set;
+	char * ret;
+} context;
+
 typedef struct frag_container {
 	size_t length;
 	frag * frags;
@@ -31,8 +37,17 @@ typedef struct RunTimeFragCluster {
 	size_t begin;
 	size_t end;
 	bool empty;
-	frag_container * cluster;
+	frag * cluster;
 } RunTimeFragCluster;
+
+typedef struct MatchParams {
+	size_t size;
+	size_t start;
+	int * accept;
+	string s;
+	frag_container pool;
+} MatchParams;
+
 
 inline ostream &operator<<(std::ostream &out, const state &p) {
 	out << p.From << ' ' << (p.On == 0x0 ? '*' : p.On ) << ' ' << p.To;
@@ -48,6 +63,7 @@ inline ostream &operator<<(std::ostream &out, const frag &p) {
 		out << *p.set[i] << endl;
 	return out;
 }
+
 inline ostream &operator<<(std::ostream &out, const frag_container &p) {
 	for (size_t i = 0; i < p.length; i++) {
 		for (size_t x = 0; x < p.frags[i].length; x++)
@@ -106,6 +122,31 @@ bool empty(frag f) {
 	return f.length == 0;
 }
 
+bool empty( RunTimeFragCluster* r ) {
+	r->empty = r->begin == r->end;
+	return r->empty;
+}
+
+void _RTFC_set( RunTimeFragCluster* r, size_t size ) {
+	r->begin = 0;
+	r->end = 0;
+	r->empty = true;
+	r->cluster = new frag[size*size];
+}
+
+void _RTFC_append( RunTimeFragCluster* r, frag * f) {
+	/*r->cluster[r->end] = f;
+	r->cluster[r->end].length--; 
+	r->end++;
+	r->empty = false;*/
+}
+
+void _RTFC_shift( RunTimeFragCluster* r, frag* f ) {
+/*	if( r->empty ) return;
+	f = r->cluster[r->begin++].frags;
+	empty( r );*/
+}
+
 bool exists(int* b, size_t size, int a) {
 	for (size_t i = 0; i < size && size != 0; i++)
 		if (b[i] == a) return true;
@@ -124,15 +165,18 @@ void _reduce_frag_spray(frag_container* p) {
 	p->length = size;
 }
 
-frag _Get_From_Pool(ushort n, frag_container pool)
+context _CTX_From_Pool(ushort n, frag_container pool)
 {
+	context ctx;
 	for (size_t i = 0; i < pool.length; i++)
-		if (pool.frags[i].handle == n)
-			return pool.frags[i];
-	frag fail;
-	fail.handle = 0;
-	fail.length = 0;
-	return fail;
+		if (pool.frags[i].handle == n) {
+			ctx.set = pool.frags[i];
+			return ctx;
+		}
+	ctx.ret = 0x0;
+	ctx.set.handle = 0;
+	ctx.set.length = 0;
+	return ctx;
 }
 /****************************************************************************************************/
 /****************************************************************************************************/
@@ -143,6 +187,7 @@ char code(ushort c) { return (char)c; }
 
 void join(state ** destination, state ** source, int * dest_length, int * source_length, int criteria)
 {
+
 	int offset = *dest_length;
 	bool add = true;
 	for (int x = 0; x < *source_length; x++)
