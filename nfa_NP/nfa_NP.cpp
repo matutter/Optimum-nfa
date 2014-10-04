@@ -1,4 +1,4 @@
-//#include "stdafx.h"
+#include "stdafx.h"
 /* notes
 * an 'on' code of 0x0 (null) will represent an epsilon transition or empty
 * all the search algorithms are NOT optimized, i wrote this on a plane
@@ -50,10 +50,10 @@ void inference(frag_container* pool, state** s, size_t size) {
 }
 
 /* Void Match( string task, int start_state, frag* fragment_pool ); */
-bool Match( MatchParams p )
+bool Match( MatchParams p, string s )
 {
-	char * cursor = &p.s[0];
-	char * end = &p.s[p.s.length()];
+	char * cursor = &s[0];
+	char * end = &s[s.length()];
 	context ctx = _CTX_From_Pool(p.start, p.pool);
 	RunTimeFragCluster history;
 	_RTFC_set( &history, p.size );
@@ -61,26 +61,29 @@ bool Match( MatchParams p )
 	while (cursor != end)
 	{
 		cout << ctx << endl;
-/*		_get_frag_match_on( &ctx, *cursor );
-		if(empty(ctx))
+		
+		_get_frag_match_on( &ctx, *cursor );
+		ctx.ret = cursor;
+		if (empty(ctx))
 		{
-
-			if( empty( &history ) )
+			if (empty(&history))
 				return false;
-			else
-				_RTFC_shift( &history, &ctx );
+	
+			_RTFC_shift(&history, &ctx);
+			cursor = ctx.ret;
+		
 		}
 		else
 		{
-			if( ctx.length > 1 )
-				_RTFC_append( &history, &ctx );
-
-			ctx = _Get_From_Pool( ctx.set[ctx.length-1]->To, p.pool );
-
+			if (ctx.set.length > 1) 
+				_RTFC_append(&history, ctx);
+			
+			ctx = _CTX_From_Pool(ctx.set.set[ctx.set.length]->To, p.pool);
+			
 			++cursor;
 		}
-	}*/
-	return false;
+	}
+	return _CTX_satify( ctx, p.accept, p.accept_length );
 }
 
 int main(int argc, char const *argv[])
@@ -107,13 +110,15 @@ int main(int argc, char const *argv[])
 	params.size = length;
 	params.start = 2;
 	params.accept = new int[1];
-	params.accept[1] = 4;
-	params.s = "aa";
+	params.accept[0] = 4;
+	params.accept_length = 1;
 	params.pool = pool;
 
-	Match( params );
+	string s = "abba";
 
-	//getchar();
+	cout << (Match(params, s )?"ACCEPT":"FAIL") << ": " << s << endl;
+
+	getchar();
 
 	return 0;
 }

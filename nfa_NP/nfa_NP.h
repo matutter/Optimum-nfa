@@ -25,7 +25,7 @@ typedef struct  frag {
 
 typedef struct context {
 	frag set;
-	char * ret;
+	char *ret;
 } context;
 
 typedef struct frag_container {
@@ -37,14 +37,14 @@ typedef struct RunTimeFragCluster {
 	size_t begin;
 	size_t end;
 	bool empty;
-	frag * cluster;
+	context * cluster;
 } RunTimeFragCluster;
 
 typedef struct MatchParams {
 	size_t size;
 	size_t start;
 	int * accept;
-	string s;
+	size_t accept_length;
 	frag_container pool;
 } MatchParams;
 
@@ -56,8 +56,10 @@ inline ostream &operator<<(std::ostream &out, const state &p) {
 
 inline ostream &operator<<(std::ostream &out, const frag &p) {
 	out << "From " << p.handle << endl;
-	if (p.length == 0)
+	if (p.length == 0) {
 		out << "EMPTY" << endl;
+		return out;
+	}
 	else
 	for (size_t i = 0; i < p.length; i++)
 		out << *p.set[i] << endl;
@@ -73,6 +75,11 @@ inline ostream &operator<<(std::ostream &out, const frag_container &p) {
 	return out;
 }
 
+inline ostream &operator<<(std::ostream &out, const context &p) {
+	if ( p.ret != NULL ) cout << &p.ret << endl;
+	cout << p.set << endl;
+	return out;
+}
 
 void show(state ** set, int length) {
 	for (int x = 0; x < length; x++)
@@ -104,10 +111,10 @@ void _set_frag(frag * f, int key, int size, state ** frags)
 	f->set = frags;
 }
 
-bool _get_frag_match_on(frag * f, char c) {
-	for (int i = f->length - 1; i >= 0; i--, f->length--)
-		if (f->set[i]->On == c) break;
-	return f->length-1 >= 0 && f->length--;
+bool _get_frag_match_on(context * f, char c) {
+	for (int i = f->set.length - 1; i >= 0; i--, f->set.length--)
+		if (f->set.set[i]->On == c) break;
+	return f->set.length - 1 >= 0 && f->set.length--;
 }
 
 
@@ -122,6 +129,10 @@ bool empty(frag f) {
 	return f.length == 0;
 }
 
+bool empty(context c) {
+	return empty(c.set);
+}
+
 bool empty( RunTimeFragCluster* r ) {
 	r->empty = r->begin == r->end;
 	return r->empty;
@@ -131,20 +142,22 @@ void _RTFC_set( RunTimeFragCluster* r, size_t size ) {
 	r->begin = 0;
 	r->end = 0;
 	r->empty = true;
-	r->cluster = new frag[size*size];
+	r->cluster = new context[size*size];
 }
 
-void _RTFC_append( RunTimeFragCluster* r, frag * f) {
-	/*r->cluster[r->end] = f;
-	r->cluster[r->end].length--; 
+void _RTFC_append( RunTimeFragCluster* r, context  f) {
+	if (f.set.length == 0) return;
+	f.set.length--;
+	r->cluster[r->end] = f;
 	r->end++;
-	r->empty = false;*/
+	r->empty = false;
 }
 
-void _RTFC_shift( RunTimeFragCluster* r, frag* f ) {
-/*	if( r->empty ) return;
-	f = r->cluster[r->begin++].frags;
-	empty( r );*/
+void _RTFC_shift( RunTimeFragCluster* r, context* f ) {
+	if( r->empty ) return;
+	f = &r->cluster[r->begin];
+	r->begin++;
+	empty( r );
 }
 
 bool exists(int* b, size_t size, int a) {
@@ -168,20 +181,30 @@ void _reduce_frag_spray(frag_container* p) {
 context _CTX_From_Pool(ushort n, frag_container pool)
 {
 	context ctx;
+	//ctx.ret = 0x0;
 	for (size_t i = 0; i < pool.length; i++)
 		if (pool.frags[i].handle == n) {
 			ctx.set = pool.frags[i];
 			return ctx;
 		}
-	ctx.ret = 0x0;
 	ctx.set.handle = 0;
 	ctx.set.length = 0;
 	return ctx;
 }
+
+bool _CTX_satify(context ctx, int * a, size_t length)
+{
+	for (size_t i = 0; i < ctx.set.length; i++)
+		for (size_t x = 0; x < length; x++)
+		if (ctx.set.set[i]->From == a[x]) return true;
+		return false;
+}
+
 /****************************************************************************************************/
 /****************************************************************************************************/
 /****************************************************************************************************/
 /* unused */
+/*
 ushort code(char c) { return c; }
 char code(ushort c) { return (char)c; }
 
@@ -230,7 +253,7 @@ int difference(state ** s1, state ** s2, state ** ret, int pos) {
 		}
 	}
 	return p;
-}
+}*/
 
 
 //		2, 2, 2, 2, 4, 3, 3, 1
